@@ -1,81 +1,127 @@
-## ESPHome Jura Component
+# Jura Z2 – ESPHome-Komponente mit WebUI
 
-###  **Note:**
-This project has not been updated lately, as I replaced my J6 with a Z10 [controlled via Bluetooth Proxy](https://github.com/AlexxIT/Jura), and no longer have the correct hardware setup.  
+Diese Version baut auf [Henrik-Aalto/esphome-jura-component](https://github.com/Henrik-Aalto/esphome-jura-component) auf (ursprünglich von [ryanalden](https://github.com/ryanalden/esphome-jura-component)) und ist auf die **Jura Z2** mit ESP8266/D1 mini zugeschnitten.
 
-#### 🌟 Fortunately, [Tiaan Viljoen has modernized the project](https://github.com/tiaanv/jura) to adapt to ESPHome's external component architecture, as well as adding support for ESP32, ESP-IDF, and the CoolControl milk system.
-#### 🌟 You may also be interested in [the work of Alco28](https://github.com/alco28/Jura-F7-ESPHOME).
----
-<br>
-This is an ESPhome custom component to communicate with a Jura Impressa J6 coffee machine.  It may also work with other serially-controlled Jura models with minimal adjustment.
-<br><br>
-It allows monitoring and control via HomeAssistant:
+## Funktionen
 
-<img src="images/HomeAssistant_interface.png" alt="drawing" width=55%/>
+- Ein/Aus über Home Assistant (`AN:01` / `AN:02`)
+- **Spülen auf Knopfdruck** (`FA:02`) – bewusst **kein automatisches Spülen**
+- Bezüge: Espresso, Kaffee, Heißwasser, Milchschaum, Latte Macchiato
+- Status: Auffangschale, Wassertank, Spül-/Pflegeanforderung, Bereit
+- Zähler aus dem EEPROM (`RT:`)
+- WebUI mit Status, Zählern, Diagnose, Live-Log und freier Kommandozeile
 
----
+## Warum kein automatisches Spülen?
 
-Hardware is a Wemos D1 Mini connected to the 7-pin Jura service port via a 3.3V<->5V logic level converter.\
-The D1 mini is powered from the Jura.
+Die Maschine schaltet sich selbst ab. Steht dann ein Glas unter dem linken Auslauf, sorgt ein automatisch ausgelöstes Spülen für eine Sauerei. Deshalb wird **nur manuell** gespült. Das Ausschalten nutzt `AN:02` (ohne Spülen); `FA:01` würde beim Ausschalten spülen.
 
-<img src="images/seven-pin-interface.jpg" alt="Jura 7-pin interface">
+## Befehle
 
-Above image taken from [here](https://community.home-assistant.io/t/control-your-jura-coffee-machine/26604).
+Die `FA`-Codes sind **modellabhängig**. Die Defaults unten stammen aus der bisherigen Z2-Konfiguration. Beim ersten Test bitte prüfen und bei Bedarf die Substitutions in `jura_z2.yaml` anpassen.
 
-<img src="images/connection-diagram.png" alt="Jura 7-pin interface">
+| Funktion | Substitution | Default | Hinweis |
+| --- | --- | --- | --- |
+| Einschalten | `cmd_power_on` | `AN:01` | |
+| Ausschalten | `cmd_power_off` | `AN:02` | ohne Spülen; `FA:01` = aus inkl. Spülen |
+| Spülen | `cmd_rinse` | `FA:02` | manuell; auf manchen Modellen heizt `FA:02` nur Wasser auf |
+| Espresso | `cmd_espresso` | `FA:04` | |
+| Kaffee | `cmd_coffee` | `FA:05` | |
+| Heißwasser | `cmd_hot_water` | `FA:06` | |
+| Milchschaum | `cmd_milk_foam` | `FA:07` | |
+| Latte Macchiato | `cmd_latte` | `FA:08` | |
 
-If you have diffuculty, try swapping the TX/RX pins.
+Für eigene Tests gibt es die Text-Entity **„Jura Kommando“**: Befehl eingeben (z. B. `FA:09`), wird direkt gesendet. Alternativ in den Substitutions ändern und neu flashen.
 
-The D1 Mini and level converter are placed in an enclosure screwed to the back of the Jura, hidden out of the way.
+## Hardware
 
-<img src="images/d1-mini-mounting.jpg" alt="D1 mini mounting on back of J6" width=55%/>
+Wemos D1 mini am 7-poligen Jura-Serviceport über einen 3,3-V-↔-5-V-Pegelwandler. Der D1 mini wird von der Jura versorgt. Bei Problemen TX/RX tauschen.
 
-Internal connections to the service connector wires are done with "T" tap/splices, leaving the connector itself alone.
+```
+Jura Serviceport          D1 mini
+   TX  ── Level Shifter ── RX (GPIO2)
+   RX  ── Level Shifter ── TX (GPIO14)
+   GND ────────────────── GND
+   5V  ────────────────── 5V
+```
 
-<img src="images/t-splice.png" alt="T-splice" width=25%/>
+Die Pins sind in `jura_z2.yaml` über `jura_tx_pin` / `jura_rx_pin` konfigurierbar.
 
----
+## Installation
 
-Commands for your machine can be generated using the provided script, `generate_esphome_jura_yaml.py`.  It requires the `bitarray` Python module to be installed.
+1. `credentials.example.yaml` nach `secrets.yaml` kopieren und ausfüllen:
+   ```bash
+   cp credentials.example.yaml secrets.yaml
+   ```
+2. Kompilieren und flashen:
+   ```bash
+   esphome run jura_z2.yaml
+   ```
+3. In Home Assistant über die ESPHome-Integration hinzufügen.
 
-      $ ./generate_esphome_jura_yaml.py AN:01
+`use_address` ist absichtlich nicht gesetzt; das Gerät ist über mDNS als `jura-coffee.lan` erreichbar. Bei DHCP-Wechseln empfiehlt sich eine DHCP-Reservierung im Router.
 
-            - uart.write: [0xDF, 0xDB, 0xDB, 0xDF]  ## 'A'
-            - delay: 8ms
-            - uart.write: [0xFB, 0xFF, 0xDB, 0xDF]  ## 'N'
-            - delay: 8ms
-            - uart.write: [0xFB, 0xFB, 0xFF, 0xDB]  ## ':'
-            - delay: 8ms
-            - uart.write: [0xDB, 0xDB, 0xFF, 0xDB]  ## '0'
-            - delay: 8ms
-            - uart.write: [0xDF, 0xDB, 0xFF, 0xDB]  ## '1'
-            - delay: 8ms
-            - uart.write: [0xDF, 0xFF, 0xDB, 0xDB]  ## '\r'
-            - delay: 8ms
-            - uart.write: [0xFB, 0xFB, 0xDB, 0xDB]  ## '\n'
+## WebUI
 
-Particular commands seem to vary by model.\
-These work on the Impressa J6, software `TY: PIM V01.01`, `TL: LOADER V3.0`.
-Command | Action
---- | ---
-AN:01 | Switch On
-AN:02 | Switch Off
-FA:01 | Switch off, including rinse
-AN:0D | Tray Test? Or date related?
-FA:02 | Heat up water
-FA:03 | Heat up water & Make steam?
-FA:06 | Make hot water
-FA:07 | Make 1 Espresso
-FA:08 | Make 2 Espressi
-FA:09 | Make 1 Coffee
-FA:0A | Make 2 Coffees
-FA:0B | Cup illumination light comes on. Also exits menu system.
-FA:0C | Enters the menu system - displays RINSE as the first option
-FA:0D | Cycles through menu options [dial counter-clockwise]
-FA:OE | Cycles through menu options clockwise [dial-clockwise]
-FA:0F | Reads "B. Full", Freezes up
-DA:16 | Shows the final two digits on the display, i.e. "16.."
+Nach dem Flashen: `http://jura-coffee.lan` (oder die aktuelle IP).
 
+Die Seite zeigt:
 
-#### Not Implemented:
-- Actual machine power state (currently we use an 'Optimistic', 'Assumed State' Template switch in ESPhome)
+- Power-Schalter und Status (Bereit / Ausgeschaltet / Schale / Tank / Spülen)
+- Bezugs-Buttons und „Spülen“
+- Zähler (Espresso, Kaffee, Reinigungen, Kaffeesatz usw.)
+- Diagnose (`IC`-Bits, `HZ`, `CS`, Firmware/Modell, Ereignisse)
+- Live-Log und freies Kommandofeld
+
+## Verifizierte Statusbits
+
+Per Trigger-Test an einer Z2 bestätigt:
+
+| Bit | Bedeutung |
+| --- | --- |
+| `A`-Bit4 = 1 | Auffangschale fehlt/voll |
+| `B`-Bit5 = 1 | Wassertank fehlt/leer |
+| `B`-Bit4 = 1 | Spül-/Pflegeanforderung |
+| `RT`-Wort 14 | Kaffeesatz-Zähler (sprang beim Entnehmen der Schale von 8 auf 0) |
+
+Nicht ausgewertet, weil nicht bestätigt: `A`-Bit2, `B`-Bit3, `B`-Bit6, `C`. `B`-Bit3 ist **kein** Standby-Bit.
+
+## Grenzen
+
+- Bohnen- und Filtermeldungen sind nicht lesbar; es werden keine geratenen Werte angezeigt.
+- Es gibt keinen echten Power-Rückkanal. Der Schalter ist **optimistisch**: `AN:01`/`AN:02` werden gesendet, der Zustand wird lokal geführt.
+- Standby bzw. „Display aus“ ist nicht erkennbar.
+- Die `FA`-Codes für Bezüge können je nach Z2-Firmware/Modell abweichen.
+- Kein automatisches Spülen (siehe oben).
+
+## Legacy: Jura Impressa J6
+
+Die ursprüngliche J6-Implementierung bleibt erhalten:
+
+- `jura_coffee.h`, `jura_coffee.yaml`
+- `generate_esphome_jura_yaml.py` (erzeugt UART-Sequenzen, benötigt `bitarray`)
+
+Bekannte J6-Befehle (Software `TY: PIM V01.01`, `TL: LOADER V3.0`):
+
+| Befehl | Aktion |
+| --- | --- |
+| `AN:01` | Einschalten |
+| `AN:02` | Ausschalten |
+| `FA:01` | Ausschalten inkl. Spülen |
+| `FA:02` | Wasser aufheizen |
+| `FA:03` | Wasser aufheizen & Dampf |
+| `FA:06` | Heißwasser |
+| `FA:07` | 1 Espresso |
+| `FA:08` | 2 Espressi |
+| `FA:09` | 1 Kaffee |
+| `FA:0A` | 2 Kaffees |
+| `FA:0C` | Menü (RINSE zuerst) |
+| `FA:0D` / `FA:0E` | Menü-Zyklus |
+
+Die J6-Version nutzt einen „Optimistic / Assumed State“-Template-Switch, da der echte Power-Zustand nicht auslesbar ist.
+
+## Credits
+
+- Ursprüngliches Projekt: [ryanalden/esphome-jura-component](https://github.com/ryanalden/esphome-jura-component)
+- Dieses Fork-Repository: [Henrik-Aalto/esphome-jura-component](https://github.com/Henrik-Aalto/esphome-jura-component)
+- Protokoll-Infos: [hn/jura-coffee-machine](https://github.com/hn/jura-coffee-machine) sowie die Diskussionen im Home-Assistant-Forum.
+- Modellabhängige `FA`-Codes: eigene Tests an der Z2 sowie Berichte zu F9/J5.

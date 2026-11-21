@@ -1,0 +1,915 @@
+/* Jura Z2 Web-UI Theme */
+
+html {
+  background: #120d0b;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: #efe4d6;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+  background:
+    radial-gradient(1100px 560px at 12% -12%, rgba(126, 82, 52, 0.38), transparent 60%),
+    radial-gradient(900px 520px at 104% -4%, rgba(74, 46, 31, 0.4), transparent 58%),
+    linear-gradient(158deg, #15100d 0%, #1a120e 46%, #0f0b09 100%);
+  background-attachment: fixed;
+}
+
+:host(esp-app) {
+  display: block;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 42px 20px 56px;
+  box-sizing: border-box;
+  color: #efe4d6;
+}
+
+:host(esp-app) h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 0 6px;
+  font-size: clamp(1.5rem, 3.4vw, 2.1rem);
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f5ead9;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+}
+
+:host(esp-app) h1 .logo {
+  display: inline-flex;
+  align-items: center;
+}
+
+:host(esp-app) h1 esp-logo {
+  width: 42px !important;
+  height: 32px !important;
+  filter: sepia(1) saturate(1.6) hue-rotate(-12deg)
+    drop-shadow(0 0 10px rgba(201, 154, 103, 0.35));
+}
+
+:host(esp-app) #beat {
+  color: #c99a67 !important;
+}
+
+:host(esp-app) h3 {
+  margin: 0 0 32px;
+  text-align: center;
+  font-size: 0.76rem;
+  font-weight: 400;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: #b3987c;
+}
+
+:host(esp-app) main.flex-grid-half {
+  display: block;
+}
+
+:host(esp-app) section.col {
+  margin: 0;
+}
+
+:host(esp-app) h2 {
+  margin: 28px 0 12px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: #a98c6d;
+}
+
+:host(esp-app) .btn {
+  background: rgba(61, 41, 30, 0.72);
+  color: #e9d7c2;
+  border: 1px solid rgba(201, 154, 103, 0.3);
+  border-radius: 10px;
+  padding: 8px 14px;
+  margin: 4px 6px 4px 0;
+}
+
+:host(esp-entity-table) table {
+  display: block !important;
+  width: 100% !important;
+  border-collapse: separate !important;
+  border-spacing: 0 !important;
+  background: transparent !important;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    Helvetica, Arial, sans-serif;
+}
+
+:host(esp-entity-table) thead {
+  display: none !important;
+}
+
+:host(esp-entity-table) tbody {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+:host(esp-entity-table) tbody tr {
+  display: flex !important;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+  margin: 0 !important;
+  padding: 15px 18px !important;
+  background: linear-gradient(150deg, rgba(62, 41, 30, 0.92), rgba(32, 22, 17, 0.95)) !important;
+  border: 1px solid rgba(201, 154, 103, 0.16) !important;
+  border-radius: 16px !important;
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+:host(esp-entity-table) tbody tr:hover {
+  transform: translateY(-2px);
+  border-color: rgba(201, 154, 103, 0.42) !important;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+:host(esp-entity-table) td {
+  display: block !important;
+  border: 0 !important;
+  padding: 0 !important;
+  background: transparent !important;
+}
+
+:host(esp-entity-table) td:nth-child(1) {
+  flex: 1 1 100%;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c1a78c;
+}
+
+:host(esp-entity-table) td:nth-child(2) {
+  flex: 1 1 auto;
+  margin-top: 4px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #edd2ae;
+  font-variant-numeric: tabular-nums;
+  text-align: left !important;
+}
+
+:host(esp-entity-table) td:nth-child(3) {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  margin-left: auto;
+}
+
+:host(esp-entity-table) .rnd {
+  appearance: none;
+  width: auto !important;
+  height: auto !important;
+  padding: 9px 16px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: linear-gradient(135deg, #b57a49, #d3a475) !important;
+  color: #1c120c !important;
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(181, 122, 73, 0.35);
+  transition: transform 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease;
+}
+
+:host(esp-entity-table) .rnd:hover {
+  filter: brightness(1.08);
+  transform: translateY(-1px);
+}
+
+:host(esp-entity-table) .rnd:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px rgba(181, 122, 73, 0.3);
+}
+
+:host(esp-switch) .sw label {
+  font-size: 0.8rem;
+  letter-spacing: 0.02em;
+}
+
+:host(esp-switch) .lever {
+  margin: 0 10px !important;
+  background-image: none !important;
+  background-color: #3a2a21 !important;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+
+:host(esp-switch) input[type="checkbox"]:checked + .lever {
+  background-image: none !important;
+  background-color: #c99a67 !important;
+}
+
+:host(esp-switch) .lever:after {
+  background-color: #f2e5d6 !important;
+}
+
+:host(esp-switch) .lever:before {
+  background-image: none !important;
+  background-color: rgba(255, 255, 255, 0.5) !important;
+}
+
+:host(esp-log) table {
+  background: rgba(18, 13, 11, 0.92) !important;
+  color: #c9b8a6 !important;
+  border: 1px solid rgba(201, 154, 103, 0.16) !important;
+  border-radius: 14px;
+  overflow: hidden;
+  font-size: 0.78rem;
+}
+
+:host(esp-log) thead {
+  background: #231812 !important;
+  border-color: rgba(201, 154, 103, 0.12) !important;
+}
+
+:host(esp-log) tr {
+  background-color: transparent !important;
+}
+
+:host(esp-log) th {
+  color: #d8c3ab !important;
+  background: #231812 !important;
+}
+
+:host(esp-log) th,
+:host(esp-log) td {
+  border-color: rgba(201, 154, 103, 0.1) !important;
+}
+
+/* Auslauf-Zuordnung */
+
+:host(esp-entity-table) .jura-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+:host(esp-entity-table) .jura-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #e6d2ba;
+  background: rgba(40, 27, 20, 0.75);
+  border: 1px solid rgba(201, 154, 103, 0.28);
+}
+
+:host(esp-entity-table) .jura-chip::before {
+  content: "";
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+:host(esp-entity-table) .jura-chip.jura-right {
+  color: #9ac48a;
+}
+
+:host(esp-entity-table) .jura-chip.jura-mid {
+  color: #d3a475;
+}
+
+:host(esp-entity-table) tbody tr[data-jura-outlet="right"] {
+  border-left: 3px solid #9ac48a !important;
+}
+
+:host(esp-entity-table) tbody tr[data-jura-outlet="mid"] {
+  border-left: 3px solid #d3a475 !important;
+}
+
+:host(esp-entity-table) .jura-badge {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  vertical-align: middle;
+  color: #9ac48a;
+  background: rgba(154, 196, 138, 0.12);
+  border: 1px solid rgba(154, 196, 138, 0.4);
+}
+
+:host(esp-entity-table) tbody tr[data-jura-outlet="mid"] .jura-badge {
+  color: #d3a475;
+  background: rgba(211, 164, 117, 0.12);
+  border-color: rgba(211, 164, 117, 0.4);
+}
+
+:host(esp-entity-table) tbody tr[data-jura-outlet="both"] {
+  border-left: 3px solid #b3987c !important;
+}
+
+:host(esp-entity-table) tbody tr[data-jura-outlet="both"] .jura-badge {
+  color: #cfb99e;
+  background: rgba(179, 152, 124, 0.12);
+  border-color: rgba(179, 152, 124, 0.4);
+}
+
+/* Eigenes Dashboard */
+
+esp-app {
+  display: none !important;
+}
+
+.jura-shell {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 34px 18px 70px;
+  color: #efe4d6;
+}
+
+.jura-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.jura-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.jura-logo {
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  color: #e8b885;
+  background: linear-gradient(145deg, rgba(126, 82, 52, 0.55), rgba(38, 25, 19, 0.9));
+  border: 1px solid rgba(201, 154, 103, 0.35);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+.jura-logo svg {
+  width: 32px;
+  height: 32px;
+}
+
+.jura-brand h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #f5ead9;
+}
+
+.jura-brand p {
+  margin: 3px 0 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  color: #b3987c;
+}
+
+.jura-hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.jura-power,
+.jura-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(201, 154, 103, 0.28);
+  background: rgba(45, 30, 22, 0.72);
+  color: #e9d7c2;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+}
+
+.jura-power:hover,
+.jura-ghost:hover {
+  border-color: rgba(201, 154, 103, 0.55);
+  transform: translateY(-1px);
+}
+
+.jura-power .jura-power-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.jura-power.is-on .jura-power-dot {
+  background: #e07a5f;
+  box-shadow: 0 0 10px rgba(224, 122, 95, 0.8);
+}
+
+.jura-power .jura-power-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  color: #e9d7c2;
+}
+
+.jura-power .jura-power-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.jura-ghost svg {
+  width: 18px;
+  height: 18px;
+}
+
+.jura-ghost.is-active {
+  border-color: rgba(201, 154, 103, 0.7);
+  background: rgba(91, 60, 40, 0.8);
+}
+
+.jura-statusbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.jura-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: rgba(35, 24, 18, 0.7);
+  border: 1px solid rgba(201, 154, 103, 0.16);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: #b3987c;
+}
+
+.jura-pill b {
+  color: #ecd6b6;
+  font-weight: 600;
+}
+
+.jura-notice {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: -8px 0 20px;
+  padding: 14px 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(201, 154, 103, 0.28);
+  background: linear-gradient(120deg, rgba(72, 48, 32, 0.85), rgba(38, 25, 19, 0.9));
+  color: #f1dfc8;
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.3);
+}
+
+.jura-notice[hidden] {
+  display: none !important;
+}
+
+.jura-notice-dot {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #c99a67;
+  box-shadow: 0 0 12px rgba(201, 154, 103, 0.9);
+}
+
+.jura-notice.is-warning {
+  border-color: rgba(224, 122, 95, 0.55);
+  background: linear-gradient(120deg, rgba(96, 44, 30, 0.9), rgba(48, 24, 18, 0.94));
+  color: #ffd9c9;
+}
+
+.jura-notice.is-warning .jura-notice-dot {
+  background: #e07a5f;
+  box-shadow: 0 0 14px rgba(224, 122, 95, 1);
+  animation: jura-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes jura-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+.jura-panel {
+  background: linear-gradient(160deg, rgba(40, 27, 20, 0.82), rgba(22, 15, 12, 0.92));
+  border: 1px solid rgba(201, 154, 103, 0.16);
+  border-radius: 22px;
+  padding: 22px;
+  margin-bottom: 18px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.jura-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.jura-panel h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #c1a78c;
+}
+
+.jura-panel h2 svg {
+  width: 20px;
+  height: 20px;
+  color: #c99a67;
+}
+
+.jura-hint {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #8d735b;
+}
+
+.jura-outlets {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.jura-outlet {
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(23, 15, 12, 0.55);
+  border: 1px solid rgba(201, 154, 103, 0.12);
+}
+
+.jura-outlet-right {
+  border-top: 3px solid #9ac48a;
+}
+
+.jura-outlet-mid {
+  border-top: 3px solid #d3a475;
+}
+
+.jura-outlet-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #c1a78c;
+}
+
+.jura-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.jura-outlet-right .jura-dot {
+  color: #9ac48a;
+}
+
+.jura-outlet-mid .jura-dot {
+  color: #d3a475;
+}
+
+.jura-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.jura-product,
+.jura-action {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(201, 154, 103, 0.18);
+  background: linear-gradient(150deg, rgba(62, 41, 30, 0.9), rgba(30, 20, 15, 0.95));
+  color: #efe4d6;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease,
+    filter 0.15s ease;
+}
+
+.jura-product:hover:not(:disabled),
+.jura-action:hover:not(:disabled) {
+  transform: translateY(-2px);
+  border-color: rgba(201, 154, 103, 0.55);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.32);
+}
+
+.jura-product:active:not(:disabled),
+.jura-action:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.jura-product:disabled,
+.jura-action:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(0.3);
+}
+
+.jura-product.is-busy,
+.jura-action.is-busy {
+  opacity: 0.6;
+}
+
+.jura-product.is-ok,
+.jura-action.is-ok {
+  border-color: #9ac48a;
+  box-shadow: 0 0 0 1px rgba(154, 196, 138, 0.5) inset,
+    0 0 18px rgba(154, 196, 138, 0.18);
+}
+
+.jura-product.is-error,
+.jura-action.is-error {
+  border-color: #e07a5f;
+  box-shadow: 0 0 0 1px rgba(224, 122, 95, 0.5) inset;
+}
+
+.jura-icon {
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  background: rgba(201, 154, 103, 0.1);
+  color: #d9b183;
+}
+
+.jura-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.jura-name {
+  font-size: 0.86rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.jura-sub {
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #9c8168;
+}
+
+.jura-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.jura-stat {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 15px 16px;
+  border-radius: 16px;
+  background: linear-gradient(155deg, rgba(55, 37, 27, 0.85), rgba(25, 17, 13, 0.95));
+  border: 1px solid rgba(201, 154, 103, 0.14);
+}
+
+.jura-stat-icon {
+  display: inline-flex;
+  width: 28px;
+  height: 28px;
+  align-items: center;
+  justify-content: center;
+  color: #b9926a;
+}
+
+.jura-stat-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.jura-stat-label {
+  font-size: 0.64rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #a98c6d;
+}
+
+.jura-value {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: #edd2ae;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+}
+
+.jura-stat-outlet {
+  font-size: 0.56rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #7e6652;
+}
+
+.jura-care .jura-action {
+  min-height: 92px;
+}
+
+.jura-diag-panel details {
+  display: block;
+}
+
+.jura-diag-panel summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #c1a78c;
+  list-style: none;
+}
+
+.jura-diag-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.jura-diag-panel summary svg {
+  width: 20px;
+  height: 20px;
+  color: #c99a67;
+}
+
+.jura-diag-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.jura-diag {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(18, 12, 10, 0.6);
+  border: 1px solid rgba(201, 154, 103, 0.1);
+}
+
+.jura-diag span {
+  display: block;
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #8d735b;
+  margin-bottom: 4px;
+}
+
+.jura-diag b {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #e2cdaf;
+  word-break: break-word;
+}
+
+.jura-diag-actions {
+  margin-top: 12px;
+}
+
+.jura-cmd {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.jura-cmd input {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(201, 154, 103, 0.22);
+  background: rgba(15, 10, 8, 0.8);
+  color: #efe4d6;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.jura-cmd input:focus {
+  outline: none;
+  border-color: rgba(201, 154, 103, 0.6);
+}
+
+.jura-cmd input.is-error {
+  border-color: #e07a5f;
+}
+
+.jura-compact {
+  flex-direction: row;
+  align-items: center;
+  padding: 9px 13px;
+  font-size: 0.74rem;
+}
+
+.jura-compact svg {
+  width: 18px;
+  height: 18px;
+}
+
+.jura-note {
+  margin: 10px 0 0;
+  font-size: 0.66rem;
+  line-height: 1.5;
+  color: #8d735b;
+}
+
+.jura-log-panel[hidden] {
+  display: none;
+}
+
+.jura-log-host {
+  margin-top: 4px;
+}
+
+.jura-log-host esp-log {
+  display: block;
+}
+
+.jura-small {
+  padding: 7px 11px;
+  font-size: 0.7rem;
+}
+
+@media (max-width: 760px) {
+  .jura-shell {
+    padding: 22px 12px 50px;
+  }
+
+  .jura-outlets {
+    grid-template-columns: 1fr;
+  }
+
+  .jura-brand h1 {
+    font-size: 1.35rem;
+  }
+
+  .jura-panel {
+    padding: 18px;
+    border-radius: 18px;
+  }
+}
