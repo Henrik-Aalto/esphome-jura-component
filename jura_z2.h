@@ -4,7 +4,6 @@
 #include "esphome/core/hal.h"
 #include "esphome/core/log.h"
 #include "esphome/components/uart/uart.h"
-#include "esphome/components/sensor/sensor.h"
 #include "esphome/components/text_sensor/text_sensor.h"
 #include "esphome/components/switch/switch.h"
 
@@ -12,7 +11,6 @@
 #include <cstdlib>
 #include <deque>
 #include <string>
-#include <vector>
 
 namespace esphome {
 namespace jura_z2 {
@@ -23,30 +21,22 @@ class JuraZ2 : public uart::UARTDevice {
  public:
   explicit JuraZ2(uart::UARTComponent *parent) : uart::UARTDevice(parent) {}
 
-  void set_espresso(sensor::Sensor *s) { espresso_ = s; }
-  void set_double_espresso(sensor::Sensor *s) { double_espresso_ = s; }
-  void set_coffee(sensor::Sensor *s) { coffee_ = s; }
-  void set_double_coffee(sensor::Sensor *s) { double_coffee_ = s; }
-  void set_cappuccino(sensor::Sensor *s) { cappuccino_ = s; }
-  void set_latte(sensor::Sensor *s) { latte_ = s; }
-  void set_double_ristretto(sensor::Sensor *s) { double_ristretto_ = s; }
-  void set_brew_cycles(sensor::Sensor *s) { brew_cycles_ = s; }
-  void set_clean(sensor::Sensor *s) { clean_ = s; }
-  void set_descale(sensor::Sensor *s) { descale_ = s; }
-  void set_grounds(sensor::Sensor *s) { grounds_ = s; }
-
   void set_tray_sensor(text_sensor::TextSensor *s) { tray_ = s; }
   void set_tank_sensor(text_sensor::TextSensor *s) { tank_ = s; }
   void set_status_sensor(text_sensor::TextSensor *s) { status_ = s; }
+  void set_state_raw_sensor(text_sensor::TextSensor *s) { state_raw_ = s; }
   void set_firmware_sensor(text_sensor::TextSensor *s) { firmware_ = s; }
   void set_ic_bits_sensor(text_sensor::TextSensor *s) { ic_bits_ = s; }
-  void set_hz_sensor(text_sensor::TextSensor *s) { hz_ = s; }
-  void set_cs_sensor(text_sensor::TextSensor *s) { cs_ = s; }
-  void set_counter_changes_sensor(text_sensor::TextSensor *s) { counter_changes_ = s; }
 
   void set_power_switch(switch_::Switch *s) { power_switch_ = s; }
 
-  void set_powered(bool powered) { this->apply_power_state_(powered); }
+  void set_powered(bool powered) {
+    state_known_ = false;
+    power_command_active_ = true;
+    power_command_target_ = powered;
+    power_command_ms_ = millis();
+    this->apply_power_state_(powered);
+  }
 
   void set_event_sensor(text_sensor::TextSensor *s) { event_ = s; }
 
@@ -69,13 +59,16 @@ class JuraZ2 : public uart::UARTDevice {
   void queue_firmware_read() { firmware_read_pending_ = true; }
 
   void poll() {
-    if (poll_rt_pending_ || poll_ic_pending_ || firmware_read_pending_ ||
+    if (poll_state_pending_ || poll_ic_pending_ || firmware_read_pending_ ||
         (state_ != State::IDLE && active_kind_ != Kind::ACTION)) {
-      ESP_LOGD(TAG, "Poll uebersprungen (laeuft bereits)");
       return;
     }
-    poll_rt_pending_ = poll_ic_pending_ = true;
-    ESP_LOGD(TAG, "Poll angefordert (RT + IC)");
+    poll_state_pending_ = true;
+    // IC (Schale/Tank/Spuelhinweis) reicht alle 10 s; RR:1B laeuft alle 2 s.
+    if (++poll_ic_divider_ >= 5) {
+      poll_ic_divider_ = 0;
+      poll_ic_pending_ = true;
+    }
   }
 
   void loop() {
@@ -121,9 +114,9 @@ class JuraZ2 : public uart::UARTDevice {
         std::string command = commands_.front();
         commands_.pop_front();
         this->start_(command, Kind::ACTION, now);
-      } else if (poll_rt_pending_) {
-        poll_rt_pending_ = false;
-        this->start_("RT:0000", Kind::COUNTERS, now);
+      } else if (poll_state_pending_) {
+        poll_state_pending_ = false;
+        this->start_("RR:1B", Kind::POWER_STATE, now);
       } else if (poll_ic_pending_) {
         poll_ic_pending_ = false;
         this->start_("IC:", Kind::STATUS, now);
@@ -168,27 +161,13 @@ class JuraZ2 : public uart::UARTDevice {
 
  protected:
   enum class State { IDLE, SENDING, WAITING };
-  enum class Kind { ACTION, COUNTERS, STATUS, FIRMWARE };
-
-  enum CounterIndex : size_t {
-    IDX_ESPRESSO = 0,
-    IDX_DOUBLE_ESPRESSO = 1,
-    IDX_COFFEE = 2,
-    IDX_DOUBLE_COFFEE = 3,
-    IDX_CAPPUCCINO = 4,
-    IDX_LATTE = 5,
-    IDX_DOUBLE_RISTRETTO = 6,
-    IDX_BREW_CYCLES = 7,
-    IDX_CLEAN = 8,
-    IDX_DESCALE = 9,
-    IDX_GROUNDS = 14,
-  };
+  enum class Kind { ACTION, STATUS, POWER_STATE, FIRMWARE };
 
   static const char *kind_name_(Kind kind) {
     switch (kind) {
       case Kind::ACTION: return "Aktion";
-      case Kind::COUNTERS: return "Zaehler";
       case Kind::STATUS: return "Status";
+      case Kind::POWER_STATE: return "Betriebszustand";
       case Kind::FIRMWARE: return "Firmware";
     }
     return "?";
@@ -236,21 +215,28 @@ class JuraZ2 : public uart::UARTDevice {
   }
 
   void finish_(bool success, const char *reason) {
-    if (success && active_kind_ == Kind::COUNTERS) {
-      success = valid_hex_payload_(response_, "rt:", 7) &&
-                ((response_.size() - 3) % 4 == 0);
-    } else if (success && active_kind_ == Kind::STATUS) {
+    if (success && active_kind_ == Kind::STATUS) {
       success = valid_hex_payload_(response_, "ic:", 7);
+    } else if (success && active_kind_ == Kind::POWER_STATE) {
+      success = valid_hex_payload_(response_, "rr:", 7);
     } else if (success && active_kind_ == Kind::FIRMWARE) {
       success = valid_firmware_payload_(response_);
     }
 
     if (!success) {
-      ESP_LOGW(TAG, "RX Fehler bei %s: %s (Antwort '%s', %u Bytes)",
-               active_command_.c_str(),
-               reason[0] ? reason : "unerwartete Antwort",
-               response_.c_str(), static_cast<unsigned>(response_.size()));
-      this->publish_event_(std::string("RX-Fehler: ") + active_command_);
+      if (active_kind_ == Kind::POWER_STATE) {
+        // RR:1B ist bei aelteren Modellen evtl. nicht vorhanden. Nicht alle
+        // 2 s einen Warnhinweis spammen; der Rohzustand zeigt es an.
+        state_known_ = false;
+        if (state_raw_ != nullptr) state_raw_->publish_state("keine Antwort");
+        ESP_LOGD(TAG, "RR:1B keine Antwort (%s)", reason);
+      } else {
+        ESP_LOGW(TAG, "RX Fehler bei %s: %s (Antwort '%s', %u Bytes)",
+                 active_command_.c_str(),
+                 reason[0] ? reason : "unerwartete Antwort",
+                 response_.c_str(), static_cast<unsigned>(response_.size()));
+        this->publish_event_(std::string("RX-Fehler: ") + active_command_);
+      }
     } else {
       ESP_LOGI(TAG, "RX '%s' [%s]", response_.c_str(),
                kind_name_(active_kind_));
@@ -258,20 +244,15 @@ class JuraZ2 : public uart::UARTDevice {
 
     if (!success) {
       // Fehler bereits geloggt.
-    } else if (active_kind_ == Kind::COUNTERS) {
-      this->handle_counters_();
     } else if (active_kind_ == Kind::STATUS) {
       this->handle_status_();
+    } else if (active_kind_ == Kind::POWER_STATE) {
+      this->handle_power_state_();
     } else if (active_kind_ == Kind::FIRMWARE) {
       const std::string fw = response_.substr(3);
       if (firmware_ != nullptr) firmware_->publish_state(fw);
       ESP_LOGI(TAG, "Firmware/Modell: %s", fw.c_str());
     } else {
-      if (active_command_ == "HZ:" && hz_ != nullptr) {
-        hz_->publish_state(response_);
-      } else if (active_command_ == "CS:" && cs_ != nullptr) {
-        cs_->publish_state(response_);
-      }
       ESP_LOGD(TAG, "%s Antwort: %s", active_command_.c_str(),
                response_.c_str());
     }
@@ -281,68 +262,8 @@ class JuraZ2 : public uart::UARTDevice {
     recovery_ms_ = success ? 100 : 500;
   }
 
-  static void publish_counter_(sensor::Sensor *s, const std::vector<long> &c,
-                               size_t idx) {
-    if (s != nullptr && idx < c.size()) {
-      s->publish_state(static_cast<float>(c[idx]));
-    }
-  }
-
   static void publish_text_(text_sensor::TextSensor *s, const std::string &v) {
     if (s != nullptr) s->publish_state(v);
-  }
-
-  void handle_counters_() {
-    std::vector<long> c;
-    for (size_t pos = 3; pos + 4 <= response_.size(); pos += 4) {
-      c.push_back(std::strtol(response_.substr(pos, 4).c_str(), nullptr, 16));
-    }
-
-    publish_counter_(espresso_, c, IDX_ESPRESSO);
-    publish_counter_(double_espresso_, c, IDX_DOUBLE_ESPRESSO);
-    publish_counter_(coffee_, c, IDX_COFFEE);
-    publish_counter_(double_coffee_, c, IDX_DOUBLE_COFFEE);
-    publish_counter_(cappuccino_, c, IDX_CAPPUCCINO);
-    publish_counter_(latte_, c, IDX_LATTE);
-    publish_counter_(double_ristretto_, c, IDX_DOUBLE_RISTRETTO);
-    publish_counter_(brew_cycles_, c, IDX_BREW_CYCLES);
-    publish_counter_(clean_, c, IDX_CLEAN);
-    publish_counter_(descale_, c, IDX_DESCALE);
-    publish_counter_(grounds_, c, IDX_GROUNDS);
-
-    this->publish_counter_changes_(c);
-  }
-
-  void publish_counter_changes_(const std::vector<long> &current) {
-    if (!last_counters_initialized_) {
-      last_counters_ = current;
-      last_counters_initialized_ = true;
-      return;
-    }
-    if (counter_changes_ == nullptr) {
-      last_counters_ = current;
-      return;
-    }
-
-    std::string msg;
-    char buf[40];
-    const size_t max_n =
-        last_counters_.size() > current.size() ? last_counters_.size()
-                                               : current.size();
-    for (size_t i = 0; i < max_n; ++i) {
-      const long prev = i < last_counters_.size() ? last_counters_[i] : -1;
-      const long now = i < current.size() ? current[i] : -1;
-      if (prev == now) continue;
-      if (!msg.empty()) msg += ", ";
-      std::snprintf(buf, sizeof(buf), "counter_%u %ld>%ld",
-                    static_cast<unsigned>(i + 1), prev, now);
-      msg += buf;
-    }
-    if (!msg.empty()) {
-      counter_changes_->publish_state(msg);
-      ESP_LOGD(TAG, "Zaehleraenderung: %s", msg.c_str());
-    }
-    last_counters_ = current;
   }
 
   static void byte_to_bits_(uint8_t v, char out[9]) {
@@ -392,6 +313,76 @@ class JuraZ2 : public uart::UARTDevice {
     }
     powered_ = powered;
     this->publish_power_switch_();
+    this->publish_status_();
+  }
+
+  void publish_status_() {
+    std::string st;
+
+    if (state_known_) {
+      switch (machine_state_) {
+        case 0x0000: st = "Aus"; break;
+        case 0x1000: st = "Bereit"; break;
+        case 0x1001: st = "Spült"; break;
+        case 0x1002: st = "Reinigt"; break;
+        case 0x1008: st = "Brüht"; break;
+        default: {
+          char buf[24];
+          std::snprintf(buf, sizeof(buf), "Zustand 0x%04X", machine_state_);
+          st = buf;
+          break;
+        }
+      }
+      // Laufende Vorgaenge nicht durch Schale/Tank ueberschreiben.
+      if (machine_state_ == 0x0000 || machine_state_ == 0x1001 ||
+          machine_state_ == 0x1002 || machine_state_ == 0x1008) {
+        publish_text_(status_, st);
+        return;
+      }
+    } else {
+      st = powered_ ? "Bereit" : "Aus";
+    }
+
+    if (tray_missing_) {
+      st = "Auffangschale fehlt oder voll";
+    } else if (tank_missing_) {
+      st = "Wassertank leer";
+    } else if (rinse_request_) {
+      st = "Spülung erforderlich";
+    }
+    publish_text_(status_, st);
+  }
+
+  void handle_power_state_() {
+    const std::string raw = response_.substr(3);
+    if (state_raw_ != nullptr) state_raw_->publish_state(raw);
+    const unsigned long value =
+        std::strtoul(raw.substr(0, 4).c_str(), nullptr, 16);
+    const uint16_t state = static_cast<uint16_t>(value & 0xFFFFu);
+
+    if (power_command_active_) {
+      const uint32_t age = millis() - power_command_ms_;
+      // Nach AN:01 kann RR:1B noch kurz 0000 liefern, bis die Maschine wach ist.
+      if (power_command_target_ && state == 0x0000 && age < 15000) {
+        ESP_LOGD(TAG, "RR:1B noch 0000 nach Power-ON (%.1f s)",
+                 age / 1000.0f);
+        return;
+      }
+      // Nach AN:02 kann RR:1B noch kurz einen An-Zustand liefern.
+      if (!power_command_target_ && state != 0x0000 && age < 5000) {
+        ESP_LOGD(TAG, "RR:1B noch 0x%04X nach Power-OFF (%.1f s)", state,
+                 age / 1000.0f);
+        return;
+      }
+      power_command_active_ = false;
+    }
+
+    machine_state_ = state;
+    state_known_ = true;
+    const bool on = machine_state_ != 0x0000;
+    ESP_LOGI(TAG, "RR:1B Zustand 0x%04X (%s)", machine_state_,
+             on ? "an" : "aus");
+    this->apply_power_state_(on);
   }
 
   void handle_status_() {
@@ -419,9 +410,9 @@ class JuraZ2 : public uart::UARTDevice {
     //   B-Bit7 = 1 -> Maschine antwortet
     //   B-Bit0 spiegelt B-Bit4 -> ignorieren
     // Nicht ausgewertet, weil lokal nicht bestaetigt: A-Bit2, B-Bit3, B-Bit6, C
-    const bool tray_missing = ((a >> 4) & 1u) != 0;
-    const bool tank_missing = ((b >> 5) & 1u) != 0;
-    const bool rinse_request = ((b >> 4) & 1u) != 0;
+    tray_missing_ = ((a >> 4) & 1u) != 0;
+    tank_missing_ = ((b >> 5) & 1u) != 0;
+    rinse_request_ = ((b >> 4) & 1u) != 0;
 
     if (changed) {
       char abits[9];
@@ -433,61 +424,34 @@ class JuraZ2 : public uart::UARTDevice {
       ESP_LOGI(TAG,
                "Status IC A=%s B=%s C=%s | Schale=%s Tank=%s Spuelen=%s",
                abits, bbits, has_c ? cbits : "-",
-               tray_missing ? "fehlt" : "ok",
-               tank_missing ? "leer" : "ok",
-               rinse_request ? "angefordert" : "nein");
+               tray_missing_ ? "fehlt" : "ok",
+               tank_missing_ ? "leer" : "ok",
+               rinse_request_ ? "angefordert" : "nein");
     } else {
       ESP_LOGD(TAG, "Status unveraendert (A=0x%02X B=0x%02X)", a, b);
     }
 
     this->publish_ic_bits_(a, b, c, has_c);
 
-    publish_text_(tray_, tray_missing ? "Fehlt" : "OK");
-    publish_text_(tank_, tank_missing ? "Leer" : "OK");
-
-    if (!powered_) {
-      publish_text_(status_, "Ausgeschaltet");
-      return;
-    }
-
-    std::string st = "Bereit";
-    if (tray_missing) {
-      st = "Auffangschale fehlt oder voll";
-    } else if (tank_missing) {
-      st = "Wassertank leer";
-    } else if (rinse_request) {
-      st = "Spuelung erforderlich";
-    }
-    publish_text_(status_, st);
+    publish_text_(tray_, tray_missing_ ? "Fehlt" : "OK");
+    publish_text_(tank_, tank_missing_ ? "Leer" : "OK");
+    this->publish_status_();
   }
-
-  sensor::Sensor *espresso_{nullptr};
-  sensor::Sensor *double_espresso_{nullptr};
-  sensor::Sensor *coffee_{nullptr};
-  sensor::Sensor *double_coffee_{nullptr};
-  sensor::Sensor *cappuccino_{nullptr};
-  sensor::Sensor *latte_{nullptr};
-  sensor::Sensor *double_ristretto_{nullptr};
-  sensor::Sensor *brew_cycles_{nullptr};
-  sensor::Sensor *clean_{nullptr};
-  sensor::Sensor *descale_{nullptr};
-  sensor::Sensor *grounds_{nullptr};
 
   text_sensor::TextSensor *tray_{nullptr};
   text_sensor::TextSensor *tank_{nullptr};
   text_sensor::TextSensor *status_{nullptr};
+  text_sensor::TextSensor *state_raw_{nullptr};
   text_sensor::TextSensor *firmware_{nullptr};
   text_sensor::TextSensor *ic_bits_{nullptr};
-  text_sensor::TextSensor *hz_{nullptr};
-  text_sensor::TextSensor *cs_{nullptr};
-  text_sensor::TextSensor *counter_changes_{nullptr};
   text_sensor::TextSensor *event_{nullptr};
 
   State state_{State::IDLE};
   Kind active_kind_{Kind::ACTION};
   std::deque<std::string> commands_;
-  bool poll_rt_pending_{false};
+  bool poll_state_pending_{false};
   bool poll_ic_pending_{false};
+  uint8_t poll_ic_divider_{0};
   bool firmware_read_pending_{false};
   std::string active_command_;
   std::string tx_;
@@ -497,6 +461,14 @@ class JuraZ2 : public uart::UARTDevice {
   uint8_t rx_shift_{0};
   bool response_complete_{false};
   bool powered_{false};
+  bool state_known_{false};
+  bool power_command_active_{false};
+  bool power_command_target_{false};
+  uint32_t power_command_ms_{0};
+  uint16_t machine_state_{0};
+  bool tray_missing_{false};
+  bool tank_missing_{false};
+  bool rinse_request_{false};
   switch_::Switch *power_switch_{nullptr};
   uint32_t last_rx_ms_{0};
   uint32_t finished_ms_{0};
@@ -505,8 +477,6 @@ class JuraZ2 : public uart::UARTDevice {
   uint32_t last_tx_ms_{0};
   uint32_t response_started_ms_{0};
 
-  std::vector<long> last_counters_;
-  bool last_counters_initialized_{false};
   uint8_t last_ic_a_{0};
   uint8_t last_ic_b_{0};
   uint8_t last_ic_c_{0};

@@ -7,13 +7,12 @@ substitutions:
 
   # Befehle: modellabhängig. Bei Bedarf hier anpassen.
   cmd_power_on: "AN:01"
-  cmd_power_off: "AN:02"    # aus ohne Spülen; FA:01 = aus inkl. Spülen
-  cmd_rinse: "FA:02"        # Spülen / Wartung (manuell)
-  cmd_espresso: "FA:04"
-  cmd_coffee: "FA:05"
-  cmd_hot_water: "FA:06"
-  cmd_milk_foam: "FA:07"
-  cmd_latte: "FA:08"
+  cmd_power_off: "AN:02"      # aus ohne Spülen; FA:01 = aus inkl. Spülen
+  cmd_rinse: "FA:02"          # Spülen
+  cmd_milk_rinse: "FA:0C"     # Milchsystem spülen / Milchreinigung
+  cmd_off_rinse: "FA:0E"      # Ausschaltspülung
+  cmd_clean: "FA:0D"          # Reinigen
+  cmd_descale: "FA:1F"        # Entkalken
 
 esphome:
   name: ${devicename}
@@ -26,25 +25,12 @@ esphome:
     then:
       - lambda: |-
           g_jura = new esphome::jura_z2::JuraZ2(id(uart_bus));
-          g_jura->set_espresso(id(num_single_espresso));
-          g_jura->set_double_espresso(id(num_double_espresso));
-          g_jura->set_coffee(id(num_coffee));
-          g_jura->set_double_coffee(id(num_double_coffee));
-          g_jura->set_cappuccino(id(num_cappuccino));
-          g_jura->set_latte(id(num_latte));
-          g_jura->set_double_ristretto(id(num_double_ristretto));
-          g_jura->set_brew_cycles(id(num_brew_cycles));
-          g_jura->set_clean(id(num_clean));
-          g_jura->set_descale(id(num_descale));
-          g_jura->set_grounds(id(num_grounds));
           g_jura->set_tray_sensor(id(tray_status));
           g_jura->set_tank_sensor(id(tank_status));
           g_jura->set_status_sensor(id(jura_status));
+          g_jura->set_state_raw_sensor(id(jura_state_raw));
           g_jura->set_firmware_sensor(id(jura_firmware));
           g_jura->set_ic_bits_sensor(id(jura_ic_bits));
-          g_jura->set_hz_sensor(id(jura_hz));
-          g_jura->set_cs_sensor(id(jura_cs));
-          g_jura->set_counter_changes_sensor(id(jura_counter_changes));
           g_jura->set_event_sensor(id(jura_last_event));
           g_jura->set_power_switch(id(jura_on_off_switch));
           g_jura->queue_firmware_read();
@@ -85,91 +71,6 @@ uart:
   baud_rate: 9600
   rx_buffer_size: 512
 
-sensor:
-  - platform: uptime
-    name: "${friendly_name} Uptime"
-
-  - platform: wifi_signal
-    name: "${friendly_name} WiFi Signal"
-    update_interval: 60s
-
-  - platform: template
-    id: num_single_espresso
-    name: "Espressos gesamt"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_double_espresso
-    name: "Doppelte Espressos / Ristretto"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_coffee
-    name: "Kaffees gesamt"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_double_coffee
-    name: "Doppelte Kaffees / Flat White"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_cappuccino
-    name: "Cappuccini / Ristretto"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_latte
-    name: "Latte Macchiati / Cappuccini"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_double_ristretto
-    name: "Doppelte Ristretti"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_brew_cycles
-    name: "Brühgruppen-/Spülzyklen"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_clean
-    name: "Reinigungen gesamt"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_descale
-    name: "Entkalkungen gesamt"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
-  - platform: template
-    id: num_grounds
-    name: "Kaffeesatz-Füllstand"
-    icon: "mdi:counter"
-    accuracy_decimals: 0
-    update_interval: never
-
 text_sensor:
   - platform: version
     name: "${friendly_name} ESPHome Version"
@@ -193,8 +94,15 @@ text_sensor:
     update_interval: never
 
   - platform: template
+    id: jura_state_raw
+    name: "Jura Rohzustand"
+    icon: "mdi:code-json"
+    entity_category: diagnostic
+    update_interval: never
+
+  - platform: template
     id: jura_firmware
-    name: "Jura Firmware/Modell"
+    name: "Jura Firmware"
     icon: "mdi:chip"
     entity_category: diagnostic
     update_interval: never
@@ -203,27 +111,6 @@ text_sensor:
     id: jura_ic_bits
     name: "Jura IC-Bits"
     icon: "mdi:binary"
-    entity_category: diagnostic
-    update_interval: never
-
-  - platform: template
-    id: jura_hz
-    name: "Jura HZ-Status"
-    icon: "mdi:code-json"
-    entity_category: diagnostic
-    update_interval: never
-
-  - platform: template
-    id: jura_cs
-    name: "Jura CS-Status"
-    icon: "mdi:code-json"
-    entity_category: diagnostic
-    update_interval: never
-
-  - platform: template
-    id: jura_counter_changes
-    name: "Jura Zähleränderung"
-    icon: "mdi:counter"
     entity_category: diagnostic
     update_interval: never
 
@@ -259,7 +146,7 @@ switch:
     name: "Kaffeeautomat"
     icon: "mdi:coffee-maker"
     id: jura_on_off_switch
-    optimistic: true
+    optimistic: false
     assumed_state: false
     turn_on_action:
       - lambda: |-
@@ -283,42 +170,35 @@ button:
           if (g_jura != nullptr) g_jura->queue_command("${cmd_rinse}");
 
   - platform: template
-    name: "Espresso"
-    icon: "mdi:coffee"
+    name: "Milchsystem spülen"
+    icon: "mdi:cup-water"
     on_press:
       - lambda: |-
-          if (g_jura != nullptr) g_jura->queue_command("${cmd_espresso}");
+          if (g_jura != nullptr) g_jura->queue_command("${cmd_milk_rinse}");
 
   - platform: template
-    name: "Kaffee"
-    icon: "mdi:coffee-maker"
+    name: "Ausschaltspülung"
+    icon: "mdi:water-off"
     on_press:
       - lambda: |-
-          if (g_jura != nullptr) g_jura->queue_command("${cmd_coffee}");
+          if (g_jura != nullptr) g_jura->queue_command("${cmd_off_rinse}");
 
   - platform: template
-    name: "Heißwasser"
+    name: "Reinigen"
+    icon: "mdi:auto-fix"
+    on_press:
+      - lambda: |-
+          if (g_jura != nullptr) g_jura->queue_command("${cmd_clean}");
+
+  - platform: template
+    name: "Entkalken"
     icon: "mdi:water-boiler"
     on_press:
       - lambda: |-
-          if (g_jura != nullptr) g_jura->queue_command("${cmd_hot_water}");
+          if (g_jura != nullptr) g_jura->queue_command("${cmd_descale}");
 
   - platform: template
-    name: "Milchschaum"
-    icon: "mdi:cup"
-    on_press:
-      - lambda: |-
-          if (g_jura != nullptr) g_jura->queue_command("${cmd_milk_foam}");
-
-  - platform: template
-    name: "Latte Macchiato"
-    icon: "mdi:coffee-outline"
-    on_press:
-      - lambda: |-
-          if (g_jura != nullptr) g_jura->queue_command("${cmd_latte}");
-
-  - platform: template
-    name: "Firmware/Modell lesen"
+    name: "Firmware lesen"
     icon: "mdi:chip"
     entity_category: diagnostic
     on_press:
@@ -331,15 +211,7 @@ interval:
       - lambda: |-
           if (g_jura != nullptr) g_jura->loop();
 
-  - interval: 10s
+  - interval: 2s
     then:
       - lambda: |-
           if (g_jura != nullptr) g_jura->poll();
-
-  - interval: 60s
-    then:
-      - lambda: |-
-          if (g_jura != nullptr) {
-            g_jura->queue_command("HZ:");
-            g_jura->queue_command("CS:");
-          }

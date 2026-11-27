@@ -7,47 +7,22 @@
 
   const ICONS = {
     logo: '<path d="M5 8h11v5a5 5 0 0 1-5 5H10a5 5 0 0 1-5-5V8Z"/><path d="M16 9h2.5a2.5 2.5 0 0 1 0 5H16"/><path d="M8 4c0-1 .8-1 .8-2M12 4c0-1 .8-1 .8-2M16 4c0-1 .8-1 .8-2"/>',
-    espresso: '<path d="M6 10h9v3.5A4.5 4.5 0 0 1 10.5 18A4.5 4.5 0 0 1 6 13.5V10Z"/><path d="M15 11h2a2 2 0 0 1 0 4h-2"/><path d="M8 6c0-1 1-1 1-2M11 6c0-1 1-1 1-2M14 6c0-1 1-1 1-2"/>',
-    coffee: '<path d="M5 9h11v4a5 5 0 0 1-5 5h-1a5 5 0 0 1-5-5V9Z"/><path d="M16 10h2a2.5 2.5 0 0 1 0 5h-2"/><path d="M7 5c0-1 1-1 1-2M11 5c0-1 1-1 1-2M15 5c0-1 1-1 1-2"/>',
-    double: '<path d="M2 14h8v2.5A3.5 3.5 0 0 1 6.5 20h-1A3.5 3.5 0 0 1 2 16.5V14Z"/><path d="M10 14h8v2.5A3.5 3.5 0 0 1 14.5 20h-1A3.5 3.5 0 0 1 10 16.5V14Z"/><path d="M4 9h12"/>',
-    milk: '<path d="M9 3h6l1 4v12a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V7l1-4Z"/><path d="M8 11h8"/><path d="M10 15h4"/>',
-    cappuccino: '<path d="M5 10h11v3.5A5.5 5.5 0 0 1 10.5 19A5.5 5.5 0 0 1 5 13.5V10Z"/><path d="M16 11h2a2 2 0 0 1 0 4h-2"/><path d="M6 10c1-2 3-2 4 0 1-2 3-2 4 0"/>',
     rinse: '<path d="M12 3c3 4 6 7 6 10a6 6 0 0 1-12 0c0-3 3-6 6-10Z"/><path d="M9 14c0 2 1.5 3 3 3"/>',
+    wateroff: '<path d="M12 3c3 4 6 7 6 10a6 6 0 0 1-9 5"/><path d="M4 4l16 16"/>',
+    milk: '<path d="M9 3h6l1 4v12a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V7l1-4Z"/><path d="M8 11h8"/><path d="M10 15h4"/>',
     clean: '<path d="M12 3l1.4 4.1L17.5 8.5l-4.1 1.4L12 14l-1.4-4.1L6.5 8.5l4.1-1.4L12 3Z"/><path d="M18 14l.8 2.2L21 17l-2.2.8L18 20l-.8-2.2L15 17l2.2-.8L18 14Z"/>',
     descale: '<path d="M4 8h16"/><path d="M6 8v11a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V8"/><path d="M9 12c0 2 6 2 6 0"/><path d="M12 4v2"/>',
-    milkclean: '<path d="M4 16c2-2 4-2 6 0s4 2 6 0 4-2 4 0"/><path d="M4 20c2-2 4-2 6 0s4 2 6 0 4-2 4 0"/><path d="M12 3v5"/><path d="M9 6l3 3 3-3"/>',
-    filter: '<path d="M5 4h14l-5.5 7v5.5L10.5 19v-8L5 4Z"/><path d="M9 8h6"/>',
     power: '<path d="M12 3v9"/><path d="M6.5 6.5a8 8 0 1 0 11 0"/>',
     terminal: '<path d="M4 5h16v14H4z"/><path d="M7 9l3 3-3 3"/><path d="M12 15h5"/>',
-    counter: '<path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/>',
-    tray: '<path d="M4 15h16l-2 5H6l-2-5Z"/><path d="M8 11h8"/>',
     firmware: '<path d="M6 6h12v12H6z"/><path d="M9 9h6v6H9z"/><path d="M3 10h3M3 14h3M18 10h3M18 14h3M10 3v3M14 3v3M10 18v3M14 18v3"/>',
   };
 
-  const PRODUCTS = [
-    { outlet: "right", label: "Milchschaum", icon: "milk", entity: "button/Milchschaum" },
-    { outlet: "right", label: "Latte Macchiato", icon: "milk", entity: "button/Latte Macchiato" },
-    { outlet: "right", label: "Kaffee", icon: "coffee", entity: "button/Kaffee" },
-    { outlet: "mid", label: "Espresso", icon: "espresso", entity: "button/Espresso" },
-    { outlet: "mid", label: "Heißwasser", icon: "rinse", entity: "button/Heißwasser" },
-  ];
-
   const CARE = [
     { label: "Spülen", icon: "rinse", entity: "button/Spülen" },
-  ];
-
-  const STATS = [
-    { id: "sensor/Espressos gesamt", label: "Espresso", icon: "espresso", outlet: "mitte" },
-    { id: "sensor/Doppelte Espressos ⁄ Ristretto", label: "Doppelter Espresso", icon: "double", outlet: "mitte" },
-    { id: "sensor/Kaffees gesamt", label: "Kaffee", icon: "coffee", outlet: "beide" },
-    { id: "sensor/Doppelte Kaffees ⁄ Flat White", label: "Doppelter Kaffee", icon: "double", outlet: "mitte" },
-    { id: "sensor/Cappuccini ⁄ Ristretto", label: "Cappuccino / Ristretto", icon: "cappuccino", outlet: "beide" },
-    { id: "sensor/Latte Macchiati ⁄ Cappuccini", label: "Latte / Cappuccino", icon: "milk", outlet: "rechts" },
-    { id: "sensor/Doppelte Ristretti", label: "Doppelter Ristretto", icon: "double", outlet: "mitte" },
-    { id: "sensor/Brühgruppen-⁄Spülzyklen", label: "Brüh-/Spülzyklen", icon: "counter", outlet: "system" },
-    { id: "sensor/Reinigungen gesamt", label: "Reinigungen", icon: "clean", outlet: "system" },
-    { id: "sensor/Entkalkungen gesamt", label: "Entkalkungen", icon: "descale", outlet: "system" },
-    { id: "sensor/Kaffeesatz-Füllstand", label: "Kaffeesatz", icon: "tray", outlet: "system" },
+    { label: "Milchsystem spülen", icon: "milk", entity: "button/Milchsystem spülen" },
+    { label: "Ausschaltspülung", icon: "wateroff", entity: "button/Ausschaltspülung" },
+    { label: "Reinigen", icon: "clean", entity: "button/Reinigen" },
+    { label: "Entkalken", icon: "descale", entity: "button/Entkalken" },
   ];
 
   function icon(name) {
@@ -136,24 +111,15 @@
     const notice = document.getElementById("jura-notice");
     const text = document.getElementById("jura-notice-text");
     if (!notice || !text) return;
-    const quiet = !value || value === "–" || value === "Bereit" || value === "Ausgeschaltet";
+    const quiet =
+      !value || value === "–" || value === "Bereit" || value === "Aus" ||
+      value === "Ausgeschaltet";
     notice.hidden = quiet;
     text.textContent = quiet ? "" : value;
     notice.classList.toggle(
       "is-warning",
       !quiet && /füll|leer|fehlt|voll|sp(ü|ue)l|pflege|reinig|entkalk/i.test(value)
     );
-  }
-
-  function renderState(data) {
-    const id = data.id;
-    if (!id) return;
-    const value = stateText(data);
-    document.querySelectorAll("[data-state-id]").forEach((el) => {
-      if (el.getAttribute("data-state-id") === id) el.textContent = value;
-    });
-    if (id === "switch/Kaffeeautomat") setPower(data.state === "ON");
-    if (id === "text_sensor/Jura Status") updateNotice(value);
   }
 
   async function runAction(button, entity, action) {
@@ -174,35 +140,18 @@
     }
   }
 
-  function productButton(product) {
-    if (!product.entity) {
-      return (
-        '<button type="button" class="jura-product is-disabled" disabled>' +
-        '<span class="jura-icon">' + icon(product.icon) + "</span>" +
-        '<span class="jura-name">' + product.label + "</span>" +
-        '<span class="jura-sub">Code folgt</span>' +
-        "</button>"
-      );
-    }
-    return (
-      '<button type="button" class="jura-product" data-entity="' + product.entity + '" data-action="press">' +
-      '<span class="jura-icon">' + icon(product.icon) + "</span>" +
-      '<span class="jura-name">' + product.label + "</span>" +
-      '<span class="jura-sub">Bezug starten</span>' +
-      "</button>"
-    );
+  function renderState(data) {
+    const id = data.id;
+    if (!id) return;
+    const value = stateText(data);
+    document.querySelectorAll("[data-state-id]").forEach((el) => {
+      if (el.getAttribute("data-state-id") === id) el.textContent = value;
+    });
+    if (id === "switch/Kaffeeautomat") setPower(data.state === "ON");
+    if (id === "text_sensor/Jura Status") updateNotice(value);
   }
 
   function careButton(item) {
-    if (!item.entity) {
-      return (
-        '<button type="button" class="jura-action is-disabled" disabled>' +
-        '<span class="jura-icon">' + icon(item.icon) + "</span>" +
-        '<span class="jura-name">' + item.label + "</span>" +
-        '<span class="jura-sub">Code folgt</span>' +
-        "</button>"
-      );
-    }
     return (
       '<button type="button" class="jura-action" data-entity="' + item.entity + '" data-action="press">' +
       '<span class="jura-icon">' + icon(item.icon) + "</span>" +
@@ -212,35 +161,17 @@
     );
   }
 
-  function statCard(stat) {
-    return (
-      '<div class="jura-stat">' +
-      '<span class="jura-stat-icon">' + icon(stat.icon) + "</span>" +
-      '<span class="jura-stat-label">' + stat.label + "</span>" +
-      '<span class="jura-value" data-state-id="' + stat.id + '">–</span>' +
-      '<span class="jura-stat-outlet">' + stat.outlet + "</span>" +
-      "</div>"
-    );
-  }
-
   function buildDashboard() {
-    const old = document.getElementById("jura-dash");
-    if (old) old.remove();
-
-    const right = PRODUCTS.filter((p) => p.outlet === "right").map(productButton).join("");
-    const mid = PRODUCTS.filter((p) => p.outlet === "mid").map(productButton).join("");
     const care = CARE.map(careButton).join("");
-    const stats = STATS.map(statCard).join("");
-
     const html =
       '<div id="jura-dash" class="jura-shell">' +
       '<header class="jura-hero">' +
       '<div class="jura-brand">' +
       '<div class="jura-logo">' + icon("logo") + "</div>" +
-      "<div><h1>Jura Z2</h1><p id=\"jura-subtitle\">Kaffeemaschine · Küche</p></div>" +
+      '<div><h1>Jura Z2</h1><p id="jura-subtitle">Kaffeemaschine · Küche</p></div>' +
       "</div>" +
       '<div class="jura-hero-actions">' +
-      '<button type="button" id="jura-power" class="jura-power">' +
+      '<button type="button" id="jura-power" class="jura-power" title="Ein/Aus">' +
       '<span class="jura-power-dot"></span><span class="jura-power-icon">' + icon("power") + "</span>" +
       "</button>" +
       '<button type="button" id="jura-log-toggle" class="jura-ghost">' + icon("terminal") + "<span>Log</span></button>" +
@@ -250,48 +181,29 @@
       '<span class="jura-pill">Status <b data-state-id="text_sensor/Jura Status">–</b></span>' +
       '<span class="jura-pill">Schale <b data-state-id="text_sensor/Auffangschale">–</b></span>' +
       '<span class="jura-pill">Tank <b data-state-id="text_sensor/Wassertank">–</b></span>' +
-      '<span class="jura-pill">Kaffeesatz <b data-state-id="sensor/Kaffeesatz-Füllstand">–</b></span>' +
-      '<span class="jura-pill">Firmware <b data-state-id="text_sensor/Jura Firmware⁄Modell">–</b></span>' +
+      '<span class="jura-pill">Zustand <b data-state-id="text_sensor/Jura Rohzustand">–</b></span>' +
       "</div>" +
       '<div id="jura-notice" class="jura-notice" hidden>' +
       '<span class="jura-notice-dot"></span><span id="jura-notice-text">–</span>' +
       "</div>" +
       '<section class="jura-panel">' +
-      '<div class="jura-panel-head"><h2>' + icon("espresso") + "Produkte</h2><span class=\"jura-hint\">Zwei Ausläufe</span></div>" +
-      '<div class="jura-outlets">' +
-      '<div class="jura-outlet jura-outlet-right">' +
-      '<div class="jura-outlet-head"><span class="jura-dot"></span>Rechter Auslauf</div>' +
-      '<div class="jura-card-grid">' + right + "</div>" +
-      "</div>" +
-      '<div class="jura-outlet jura-outlet-mid">' +
-      '<div class="jura-outlet-head"><span class="jura-dot"></span>Mittlerer Auslauf</div>' +
-      '<div class="jura-card-grid">' + mid + "</div>" +
-      "</div>" +
-      "</div>" +
-      "</section>" +
-      '<section class="jura-panel">' +
-      '<div class="jura-panel-head"><h2>' + icon("clean") + "Pflege</h2><span class=\"jura-hint\">Manuell spülen</span></div>" +
+      '<div class="jura-panel-head"><h2>' + icon("clean") + "Pflege</h2><span class=\"jura-hint\">Einzeln auslösen</span></div>' +
       '<div class="jura-card-grid jura-care">' + care + "</div>" +
-      "</section>" +
-      '<section class="jura-panel">' +
-      '<div class="jura-panel-head"><h2>' + icon("counter") + "Bezüge</h2><span class=\"jura-hint\">Gesamtzähler</span></div>" +
-      '<div class="jura-stats">' + stats + "</div>" +
       "</section>" +
       '<section class="jura-panel jura-diag-panel">' +
       "<details><summary>" + icon("firmware") + "Diagnose &amp; Befehl</summary>" +
       '<div class="jura-diag-grid">' +
-      '<div class="jura-diag"><span>Ereignis</span><b data-state-id="text_sensor/Jura Ereignis">–</b></div>' +
+      '<div class="jura-diag"><span>Rohzustand</span><b data-state-id="text_sensor/Jura Rohzustand">–</b></div>' +
       '<div class="jura-diag"><span>IC-Bits</span><b data-state-id="text_sensor/Jura IC-Bits">–</b></div>' +
-      '<div class="jura-diag"><span>HZ-Status</span><b data-state-id="text_sensor/Jura HZ-Status">–</b></div>' +
-      '<div class="jura-diag"><span>CS-Status</span><b data-state-id="text_sensor/Jura CS-Status">–</b></div>' +
-      '<div class="jura-diag"><span>Zähleränderung</span><b data-state-id="text_sensor/Jura Zähleränderung">–</b></div>' +
+      '<div class="jura-diag"><span>Firmware</span><b data-state-id="text_sensor/Jura Firmware">–</b></div>' +
+      '<div class="jura-diag"><span>Ereignis</span><b data-state-id="text_sensor/Jura Ereignis">–</b></div>' +
       "</div>" +
       '<div class="jura-diag-actions">' +
-      '<button type="button" class="jura-action jura-compact" data-entity="button/Firmware⁄Modell lesen" data-action="press">' +
+      '<button type="button" class="jura-action jura-compact" data-entity="button/Firmware lesen" data-action="press">' +
       icon("firmware") + "Firmware lesen</button>" +
       "</div>" +
       '<form id="jura-cmd-form" class="jura-cmd">' +
-      '<input id="jura-cmd" maxlength="32" placeholder="z. B. FA:04" autocomplete="off">' +
+      '<input id="jura-cmd" maxlength="32" placeholder="z. B. RR:1B" autocomplete="off">' +
       '<button type="submit" class="jura-action jura-compact">Senden</button>' +
       "</form>" +
       '<p class="jura-note">Nur zur Diagnose. Unbekannte FA-Codes können unerwünschte Aktionen auslösen.</p>' +
@@ -309,17 +221,22 @@
 
   function mountLog() {
     const host = document.getElementById("jura-log-host");
-    if (!host) return;
+    if (!host || host.childElementCount > 0) return;
     const element = document.createElement("esp-log");
-    element.setAttribute("rows", "120");
+    element.setAttribute("rows", "200");
     host.appendChild(element);
     const applyRows = () => {
-      try { element.rows = 120; } catch (e) {}
+      try { element.rows = 200; } catch (e) {}
     };
     if (window.customElements && window.customElements.whenDefined) {
       window.customElements.whenDefined("esp-log").then(applyRows);
     }
     applyRows();
+  }
+
+  function unmountLog() {
+    const host = document.getElementById("jura-log-host");
+    if (host) host.innerHTML = "";
   }
 
   function connectSource() {
@@ -357,18 +274,22 @@
     const logPanel = document.getElementById("jura-log-panel");
     if (logToggle && logPanel) {
       logToggle.addEventListener("click", () => {
-        logPanel.hidden = !logPanel.hidden;
-        logToggle.classList.toggle("is-active", !logPanel.hidden);
-        if (!logPanel.hidden) logPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        const show = logPanel.hidden;
+        logPanel.hidden = !show;
+        logToggle.classList.toggle("is-active", show);
+        if (show) {
+          mountLog();
+          logPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+        } else {
+          unmountLog();
+        }
       });
     }
 
     const logClear = document.getElementById("jura-log-clear");
     if (logClear) {
       logClear.addEventListener("click", () => {
-        const host = document.getElementById("jura-log-host");
-        if (!host) return;
-        host.innerHTML = "";
+        unmountLog();
         mountLog();
       });
     }
@@ -416,7 +337,6 @@
     buildDashboard();
     wire();
     connectSource();
-    mountLog();
     new MutationObserver(sweep).observe(document.documentElement, {
       childList: true,
       subtree: true,

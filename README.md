@@ -1,34 +1,52 @@
-# Jura Z2 – ESPHome-Komponente mit WebUI
+# Jura Z2 – ESPHome-Basisversion mit WebUI
 
-Diese Version baut auf [Henrik-Aalto/esphome-jura-component](https://github.com/Henrik-Aalto/esphome-jura-component) auf (ursprünglich von [ryanalden](https://github.com/ryanalden/esphome-jura-component)) und ist auf die **Jura Z2** mit ESP8266/D1 mini zugeschnitten.
+Diese Version baut auf [Henrik-Aalto/esphome-jura-component](https://github.com/Henrik-Aalto/esphome-jura-component) auf (ursprünglich von [ryanalden/esphome-jura-component](https://github.com/ryanalden/esphome-jura-component)) und ist auf die **Jura Z2** mit ESP8266/D1 mini zugeschnitten.
+
+Die Basisversion konzentriert sich auf Ein/Aus, getrennte Pflegeprogramme und ein zuschaltbares Log. Bezugs-Buttons und Zähler sind bewusst **nicht** enthalten.
 
 ## Funktionen
 
 - Ein/Aus über Home Assistant (`AN:01` / `AN:02`)
-- **Spülen auf Knopfdruck** (`FA:02`) – bewusst **kein automatisches Spülen**
-- Bezüge: Espresso, Kaffee, Heißwasser, Milchschaum, Latte Macchiato
+- **Echter Powerstatus** über `RR:1B` (Polling alle 2 s) statt optimistischem Schalter
+- Fünf getrennte Pflegeprogramme: Spülen, Milchsystem spülen, Ausschaltspülung, Reinigen, Entkalken
 - Status: Auffangschale, Wassertank, Spül-/Pflegeanforderung, Bereit
-- Zähler aus dem EEPROM (`RT:`)
-- WebUI mit Status, Zählern, Diagnose, Live-Log und freier Kommandozeile
+- WebUI mit Power, Pflege-Buttons, Diagnose, Live-Log (zuschaltbar) und freier Kommandozeile
+- **Kein automatisches Spülen**
+- Keine Zähler und keine Bezugs-Buttons in dieser Basisversion
 
 ## Warum kein automatisches Spülen?
 
 Die Maschine schaltet sich selbst ab. Steht dann ein Glas unter dem linken Auslauf, sorgt ein automatisch ausgelöstes Spülen für eine Sauerei. Deshalb wird **nur manuell** gespült. Das Ausschalten nutzt `AN:02` (ohne Spülen); `FA:01` würde beim Ausschalten spülen.
 
+## Powerstatus über `RR:1B`
+
+Die Komponente fragt alle 2 Sekunden `RR:1B` ab. Bekannte Zustände aus dem F90-Code:
+
+| Antwort | Bedeutung |
+| --- | --- |
+| `rr:0000` | aus |
+| `rr:1000` | an / bereit |
+| `rr:1001` | spült |
+| `rr:1002` | reinigt |
+| `rr:1008` | brüht |
+
+Nach einem Power-Befehl gibt es eine kurze Schonfrist: Nach `AN:01` wird ein noch gemeldetes `0000` bis zu 15 s ignoriert, nach `AN:02` ein noch gemeldeter An-Zustand bis zu 5 s. Das verhindert ein kurzes Zurückspringen des Schalters.
+
+Falls die Z2 `RR:1B` nicht beantwortet, zeigt der Rohzustand `keine Antwort`; der Schalter bleibt beim zuletzt gesendeten Zustand. Es wird nicht alle 2 s eine Warnung geloggt.
+
 ## Befehle
 
-Die `FA`-Codes sind **modellabhängig**. Die Defaults unten stammen aus der bisherigen Z2-Konfiguration. Beim ersten Test bitte prüfen und bei Bedarf die Substitutions in `jura_z2.yaml` anpassen.
+Die `FA`-Codes sind **modellabhängig**. Die Defaults unten stammen aus der bisherigen Z2-Konfiguration und aus dem F90-Code. Beim ersten Test bitte prüfen und bei Bedarf die Substitutions in `jura_z2.yaml` anpassen.
 
 | Funktion | Substitution | Default | Hinweis |
 | --- | --- | --- | --- |
-| Einschalten | `cmd_power_on` | `AN:01` | |
+| Einschalten | `cmd_power_on` | `AN:01` | Weckwirkung bei ausgeschalteter Z2 nicht bestätigt |
 | Ausschalten | `cmd_power_off` | `AN:02` | ohne Spülen; `FA:01` = aus inkl. Spülen |
 | Spülen | `cmd_rinse` | `FA:02` | manuell; auf manchen Modellen heizt `FA:02` nur Wasser auf |
-| Espresso | `cmd_espresso` | `FA:04` | |
-| Kaffee | `cmd_coffee` | `FA:05` | |
-| Heißwasser | `cmd_hot_water` | `FA:06` | |
-| Milchschaum | `cmd_milk_foam` | `FA:07` | |
-| Latte Macchiato | `cmd_latte` | `FA:08` | |
+| Milchsystem spülen | `cmd_milk_rinse` | `FA:0C` | modellabhängig |
+| Ausschaltspülung | `cmd_off_rinse` | `FA:0E` | konfliktbehaftet: alte Z2-YAML = Ausschaltspülung, F90 = Kaffee |
+| Reinigen | `cmd_clean` | `FA:0D` | modellabhängig |
+| Entkalken | `cmd_descale` | `FA:1F` | modellabhängig |
 
 Für eigene Tests gibt es die Text-Entity **„Jura Kommando“**: Befehl eingeben (z. B. `FA:09`), wird direkt gesendet. Alternativ in den Substitutions ändern und neu flashen.
 
@@ -67,10 +85,10 @@ Nach dem Flashen: `http://jura-coffee.lan` (oder die aktuelle IP).
 Die Seite zeigt:
 
 - Power-Schalter und Status (Bereit / Ausgeschaltet / Schale / Tank / Spülen)
-- Bezugs-Buttons und „Spülen“
-- Zähler (Espresso, Kaffee, Reinigungen, Kaffeesatz usw.)
-- Diagnose (`IC`-Bits, `HZ`, `CS`, Firmware/Modell, Ereignisse)
-- Live-Log und freies Kommandofeld
+- Fünf Pflege-Buttons
+- Diagnose (`IC`-Bits, Firmware, Rohzustand, Ereignisse)
+- Live-Log, das per Schalter wirklich gestartet/gestoppt wird
+- Freies Kommandofeld
 
 ## Verifizierte Statusbits
 
@@ -81,17 +99,18 @@ Per Trigger-Test an einer Z2 bestätigt:
 | `A`-Bit4 = 1 | Auffangschale fehlt/voll |
 | `B`-Bit5 = 1 | Wassertank fehlt/leer |
 | `B`-Bit4 = 1 | Spül-/Pflegeanforderung |
-| `RT`-Wort 14 | Kaffeesatz-Zähler (sprang beim Entnehmen der Schale von 8 auf 0) |
 
-Nicht ausgewertet, weil nicht bestätigt: `A`-Bit2, `B`-Bit3, `B`-Bit6, `C`. `B`-Bit3 ist **kein** Standby-Bit.
+Nicht ausgewertet, weil nicht bestätigt: `A`-Bit2, `B`-Bit3, `B`-Bit6, `C`. `B`-Bit3 ist **kein** Standby-Bit. `B`-Bit7 = 1 bedeutet nur, dass die Maschine antwortet.
 
 ## Grenzen
 
 - Bohnen- und Filtermeldungen sind nicht lesbar; es werden keine geratenen Werte angezeigt.
-- Es gibt keinen echten Power-Rückkanal. Der Schalter ist **optimistisch**: `AN:01`/`AN:02` werden gesendet, der Zustand wird lokal geführt.
+- `RR:1B` ist auf der Z2 noch nicht live verifiziert. Ohne Antwort bleibt der Schalter beim zuletzt gesendeten Zustand.
 - Standby bzw. „Display aus“ ist nicht erkennbar.
-- Die `FA`-Codes für Bezüge können je nach Z2-Firmware/Modell abweichen.
+- Die `FA`-Codes für Pflegeprogramme können je nach Z2-Firmware/Modell abweichen.
+- `FA:0E` ist nicht eindeutig belegt.
 - Kein automatisches Spülen (siehe oben).
+- Keine Zähler und keine Bezugs-Buttons in dieser Basisversion.
 
 ## Legacy: Jura Impressa J6
 
@@ -124,4 +143,5 @@ Die J6-Version nutzt einen „Optimistic / Assumed State“-Template-Switch, da 
 - Ursprüngliches Projekt: [ryanalden/esphome-jura-component](https://github.com/ryanalden/esphome-jura-component)
 - Dieses Fork-Repository: [Henrik-Aalto/esphome-jura-component](https://github.com/Henrik-Aalto/esphome-jura-component)
 - Protokoll-Infos: [hn/jura-coffee-machine](https://github.com/hn/jura-coffee-machine) sowie die Diskussionen im Home-Assistant-Forum.
+- `RR:1B`-Zustände: F90-Code aus der openHAB-Community.
 - Modellabhängige `FA`-Codes: eigene Tests an der Z2 sowie Berichte zu F9/J5.
