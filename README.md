@@ -2,7 +2,7 @@
 
 Diese Version baut auf [Henrik-Aalto/esphome-jura-component](https://github.com/Henrik-Aalto/esphome-jura-component) auf (ursprünglich von [ryanalden/esphome-jura-component](https://github.com/ryanalden/esphome-jura-component)) und ist auf die **Jura Z2** mit ESP8266/D1 mini zugeschnitten.
 
-Die Basisversion konzentriert sich auf Ein/Aus, getrennte Pflegeprogramme und ein zuschaltbares Log. Bezugs-Buttons und Zähler sind bewusst **nicht** enthalten.
+Die Basisversion konzentriert sich auf Ein/Aus, getrennte Pflegeprogramme, Autospülen-Schalter und ein zuschaltbares Log. Bezugs-Buttons und Zähler sind bewusst **nicht** enthalten.
 
 ## Funktionen
 
