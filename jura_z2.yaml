@@ -157,9 +157,29 @@ switch:
     turn_off_action:
       - lambda: |-
           if (g_jura != nullptr) {
+            if (id(auto_rinse_left).state) {
+              g_jura->queue_command("${cmd_rinse}");
+            }
+            if (id(auto_rinse_middle).state) {
+              g_jura->queue_command("${cmd_milk_rinse}");
+            }
             g_jura->set_powered(false);
             g_jura->queue_command("${cmd_power_off}");
           }
+
+  - platform: template
+    name: "Autospülen links"
+    id: auto_rinse_left
+    icon: "mdi:water-sync"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+
+  - platform: template
+    name: "Autospülen Mitte"
+    id: auto_rinse_middle
+    icon: "mdi:cup-water"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_ON
 
 button:
   - platform: template

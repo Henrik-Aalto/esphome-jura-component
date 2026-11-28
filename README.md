@@ -7,32 +7,36 @@ Die Basisversion konzentriert sich auf Ein/Aus, getrennte Pflegeprogramme und ei
 ## Funktionen
 
 - Ein/Aus über Home Assistant (`AN:01` / `AN:02`)
-- **Echter Powerstatus** über `RR:1B` (Polling alle 2 s) statt optimistischem Schalter
+- **Echter Powerstatus** über `HZ:` (Polling alle 2 s) statt optimistischem Schalter
 - Fünf getrennte Pflegeprogramme: Spülen, Milchsystem spülen, Ausschaltspülung, Reinigen, Entkalken
 - Status: Auffangschale, Wassertank, Spül-/Pflegeanforderung, Bereit
-- WebUI mit Power, Pflege-Buttons, Diagnose, Live-Log (zuschaltbar) und freier Kommandozeile
-- **Kein automatisches Spülen**
+- WebUI mit Power, Pflege-Buttons, Autospülen-Schaltern, Diagnose, Live-Log (zuschaltbar) und freier Kommandozeile
+- Autospülen beim Ausschalten getrennt für links (Kaffeeauslauf) und Mitte (Milchsystem) schaltbar
 - Keine Zähler und keine Bezugs-Buttons in dieser Basisversion
 
-## Warum kein automatisches Spülen?
+## Autospülen beim Ausschalten
 
-Die Maschine schaltet sich selbst ab. Steht dann ein Glas unter dem linken Auslauf, sorgt ein automatisch ausgelöstes Spülen für eine Sauerei. Deshalb wird **nur manuell** gespült. Das Ausschalten nutzt `AN:02` (ohne Spülen); `FA:01` würde beim Ausschalten spülen.
+Vor `AN:02` werden die ausgewählten Spülungen in die Befehlswarteschlange gelegt:
 
-## Powerstatus über `RR:1B`
+| Schalter | Default | Befehl | Auslauf |
+| --- | --- | --- | --- |
+| Autospülen links | **aus** | `FA:02` | linker Kaffeeauslauf |
+| Autospülen Mitte | **an** | `FA:0C` | Milchsystem / Mitte |
 
-Die Komponente fragt alle 2 Sekunden `RR:1B` ab. Bekannte Zustände aus dem F90-Code:
+Links ist absichtlich standardmäßig aus: Steht ein Glas unter dem linken Auslauf, kann die Spülung spritzen. Wenn links gespült werden soll, vorher ein Glas unterstellen und den Schalter im WebUI einschalten. Die Mitte ist standardmäßig an, weil dort nichts im Weg steht.
 
-| Antwort | Bedeutung |
-| --- | --- |
-| `rr:0000` | aus |
-| `rr:1000` | an / bereit |
-| `rr:1001` | spült |
-| `rr:1002` | reinigt |
-| `rr:1008` | brüht |
+## Powerstatus über `HZ:`
 
-Nach einem Power-Befehl gibt es eine kurze Schonfrist: Nach `AN:01` wird ein noch gemeldetes `0000` bis zu 15 s ignoriert, nach `AN:02` ein noch gemeldeter An-Zustand bis zu 5 s. Das verhindert ein kurzes Zurückspringen des Schalters.
+Die Komponente fragt alle 2 Sekunden `HZ:` ab. Auf der Z2 bleibt `RR:1B` auch bei ausgeschalteter Maschine unverändert (`B7EB`); `HZ:` ändert sich dagegen:
 
-Falls die Z2 `RR:1B` nicht beantwortet, zeigt der Rohzustand `keine Antwort`; der Schalter bleibt beim zuletzt gesendeten Zustand. Es wird nicht alle 2 s eine Warnung geloggt.
+| Zustand | `HZ`-Erstfeld | Bit 6 |
+| --- | --- | --- |
+| an | `110000100000` | 0 |
+| aus | `110001100000` | 1 |
+
+Die Firmware wertet Bit 6 des ersten HZ-Feldes aus: gesetzt = aus/Standby, nicht gesetzt = an. Nach einem Power-Befehl gibt es eine Schonfrist: Nach `AN:01` wird ein noch gemeldetes „aus“ bis zu 20 s ignoriert, nach `AN:02` ein noch gemeldetes „an“ bis zu 30 s. Das verhindert ein kurzes Zurückspringen des Schalters, besonders beim Ausschalten mit vorheriger Spülung.
+
+Falls die Z2 `HZ:` nicht beantwortet, zeigt der Rohzustand `keine Antwort`; der Schalter bleibt beim zuletzt gesendeten Zustand. Es wird nicht alle 2 s eine Warnung geloggt.
 
 ## Befehle
 
@@ -84,9 +88,10 @@ Nach dem Flashen: `http://jura-coffee.lan` (oder die aktuelle IP).
 
 Die Seite zeigt:
 
-- Power-Schalter und Status (Bereit / Ausgeschaltet / Schale / Tank / Spülen)
+- Power-Schalter und Status (Bereit / Aus / Schale / Tank / Spülen)
+- Autospülen-Schalter für links und Mitte
 - Fünf Pflege-Buttons
-- Diagnose (`IC`-Bits, Firmware, Rohzustand, Ereignisse)
+- Diagnose (`IC`-Bits, Firmware, HZ-Rohzustand, Ereignisse)
 - Live-Log, das per Schalter wirklich gestartet/gestoppt wird
 - Freies Kommandofeld
 
@@ -105,11 +110,10 @@ Nicht ausgewertet, weil nicht bestätigt: `A`-Bit2, `B`-Bit3, `B`-Bit6, `C`. `B`
 ## Grenzen
 
 - Bohnen- und Filtermeldungen sind nicht lesbar; es werden keine geratenen Werte angezeigt.
-- `RR:1B` ist auf der Z2 noch nicht live verifiziert. Ohne Antwort bleibt der Schalter beim zuletzt gesendeten Zustand.
-- Standby bzw. „Display aus“ ist nicht erkennbar.
+- `HZ:`-Bit 6 wurde an der Z2 bei aus/on beobachtet; die Firmware mit dieser Auswertung ist noch nicht geflasht.
+- Ohne HZ-Antwort bleibt der Schalter beim zuletzt gesendeten Zustand.
 - Die `FA`-Codes für Pflegeprogramme können je nach Z2-Firmware/Modell abweichen.
 - `FA:0E` ist nicht eindeutig belegt.
-- Kein automatisches Spülen (siehe oben).
 - Keine Zähler und keine Bezugs-Buttons in dieser Basisversion.
 
 ## Legacy: Jura Impressa J6
@@ -143,5 +147,5 @@ Die J6-Version nutzt einen „Optimistic / Assumed State“-Template-Switch, da 
 - Ursprüngliches Projekt: [ryanalden/esphome-jura-component](https://github.com/ryanalden/esphome-jura-component)
 - Dieses Fork-Repository: [Henrik-Aalto/esphome-jura-component](https://github.com/Henrik-Aalto/esphome-jura-component)
 - Protokoll-Infos: [hn/jura-coffee-machine](https://github.com/hn/jura-coffee-machine) sowie die Diskussionen im Home-Assistant-Forum.
-- `RR:1B`-Zustände: F90-Code aus der openHAB-Community.
+- `HZ:`-Power-Bit: eigene Messung an der Z2 bei aus- und eingeschalteter Maschine.
 - Modellabhängige `FA`-Codes: eigene Tests an der Z2 sowie Berichte zu F9/J5.

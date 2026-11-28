@@ -149,6 +149,13 @@
     });
     if (id === "switch/Kaffeeautomat") setPower(data.state === "ON");
     if (id === "text_sensor/Jura Status") updateNotice(value);
+    const toggle = document.querySelector('[data-switch="' + id + '"]');
+    if (toggle) toggle.classList.toggle("is-on", data.state === "ON");
+    document.querySelectorAll("[data-switch-state]").forEach((el) => {
+      if (el.getAttribute("data-switch-state") === id) {
+        el.textContent = data.state === "ON" ? "An" : "Aus";
+      }
+    });
   }
 
   function careButton(item) {
@@ -161,8 +168,21 @@
     );
   }
 
+  function autoSwitch(name, iconName) {
+    return (
+      '<button type="button" class="jura-action jura-auto" data-switch="switch/' + name + '">' +
+      '<span class="jura-icon">' + icon(iconName) + "</span>" +
+      '<span class="jura-name">' + name + "</span>" +
+      '<span class="jura-sub" data-switch-state="switch/' + name + '">–</span>' +
+      "</button>"
+    );
+  }
+
   function buildDashboard() {
     const care = CARE.map(careButton).join("");
+    const auto =
+      autoSwitch("Autospülen links", "rinse") +
+      autoSwitch("Autospülen Mitte", "milk");
     const html =
       '<div id="jura-dash" class="jura-shell">' +
       '<header class="jura-hero">' +
@@ -187,7 +207,11 @@
       '<span class="jura-notice-dot"></span><span id="jura-notice-text">–</span>' +
       "</div>" +
       '<section class="jura-panel">' +
-      '<div class="jura-panel-head"><h2>' + icon("clean") + "Pflege</h2><span class=\"jura-hint\">Einzeln auslösen</span></div>' +
+      '<div class="jura-panel-head"><h2>' + icon("rinse") + "Automatik</h2><span class=\"jura-hint\">Spülen beim Ausschalten</span></div>" +
+      '<div class="jura-card-grid jura-care">' + auto + "</div>" +
+      "</section>" +
+      '<section class="jura-panel">' +
+      '<div class="jura-panel-head"><h2>' + icon("clean") + "Pflege</h2><span class=\"jura-hint\">Einzeln auslösen</span></div>" +
       '<div class="jura-card-grid jura-care">' + care + "</div>" +
       "</section>" +
       '<section class="jura-panel jura-diag-panel">' +
@@ -203,7 +227,7 @@
       icon("firmware") + "Firmware lesen</button>" +
       "</div>" +
       '<form id="jura-cmd-form" class="jura-cmd">' +
-      '<input id="jura-cmd" maxlength="32" placeholder="z. B. RR:1B" autocomplete="off">' +
+      '<input id="jura-cmd" maxlength="32" placeholder="z. B. HZ:" autocomplete="off">' +
       '<button type="submit" class="jura-action jura-compact">Senden</button>' +
       "</form>" +
       '<p class="jura-note">Nur zur Diagnose. Unbekannte FA-Codes können unerwünschte Aktionen auslösen.</p>' +
@@ -317,6 +341,15 @@
     document.addEventListener("click", (event) => {
       const target = event.target;
       if (!target || !target.closest) return;
+      const toggle = target.closest("[data-switch]");
+      if (toggle && !toggle.disabled) {
+        event.preventDefault();
+        const entity = toggle.getAttribute("data-switch");
+        const current = store.get(entity);
+        const on = current && current.state === "ON";
+        runAction(toggle, entity, on ? "turn_off" : "turn_on");
+        return;
+      }
       const button = target.closest("[data-entity][data-action]");
       if (!button || button.disabled) return;
       event.preventDefault();

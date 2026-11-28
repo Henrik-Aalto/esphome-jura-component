@@ -679,6 +679,16 @@ esp-app {
     0 0 18px rgba(154, 196, 138, 0.18);
 }
 
+.jura-action.is-on {
+  border-color: rgba(154, 196, 138, 0.7);
+  background: linear-gradient(150deg, rgba(54, 76, 45, 0.95), rgba(24, 34, 20, 0.95));
+  box-shadow: 0 0 0 1px rgba(154, 196, 138, 0.35) inset;
+}
+
+.jura-action.is-on .jura-sub {
+  color: #b7d7a9;
+}
+
 .jura-product.is-error,
 .jura-action.is-error {
   border-color: #e07a5f;

@@ -31,7 +31,6 @@ class JuraZ2 : public uart::UARTDevice {
   void set_power_switch(switch_::Switch *s) { power_switch_ = s; }
 
   void set_powered(bool powered) {
-    state_known_ = false;
     power_command_active_ = true;
     power_command_target_ = powered;
     power_command_ms_ = millis();
@@ -64,7 +63,7 @@ class JuraZ2 : public uart::UARTDevice {
       return;
     }
     poll_state_pending_ = true;
-    // IC (Schale/Tank/Spuelhinweis) reicht alle 10 s; RR:1B laeuft alle 2 s.
+    // IC (Schale/Tank/Spuelhinweis) reicht alle 10 s; HZ (Power) laeuft alle 2 s.
     if (++poll_ic_divider_ >= 5) {
       poll_ic_divider_ = 0;
       poll_ic_pending_ = true;
@@ -116,7 +115,7 @@ class JuraZ2 : public uart::UARTDevice {
         this->start_(command, Kind::ACTION, now);
       } else if (poll_state_pending_) {
         poll_state_pending_ = false;
-        this->start_("RR:1B", Kind::POWER_STATE, now);
+        this->start_("HZ:", Kind::POWER_STATE, now);
       } else if (poll_ic_pending_) {
         poll_ic_pending_ = false;
         this->start_("IC:", Kind::STATUS, now);
@@ -174,6 +173,11 @@ class JuraZ2 : public uart::UARTDevice {
   }
 
   void start_(const std::string &command, Kind kind, uint32_t now) {
+    if (command == "AN:01" || command == "AN:02") {
+      power_command_active_ = true;
+      power_command_target_ = command == "AN:01";
+      power_command_ms_ = now;
+    }
     active_command_ = command;
     active_kind_ = kind;
     tx_ = command + "\r\n";
@@ -209,6 +213,16 @@ class JuraZ2 : public uart::UARTDevice {
     return true;
   }
 
+  static bool valid_hz_payload_(const std::string &value) {
+    if (value.rfind("hz:", 0) != 0) return false;
+    const size_t comma = value.find(',', 3);
+    if (comma == std::string::npos || comma - 3 < 7) return false;
+    for (size_t i = 3; i < comma; ++i) {
+      if (value[i] != '0' && value[i] != '1') return false;
+    }
+    return true;
+  }
+
   static bool valid_firmware_payload_(const std::string &value) {
     if (value.size() < 4) return false;
     return value[0] == 't' || value[0] == 'T';
@@ -218,18 +232,17 @@ class JuraZ2 : public uart::UARTDevice {
     if (success && active_kind_ == Kind::STATUS) {
       success = valid_hex_payload_(response_, "ic:", 7);
     } else if (success && active_kind_ == Kind::POWER_STATE) {
-      success = valid_hex_payload_(response_, "rr:", 7);
+      success = valid_hz_payload_(response_);
     } else if (success && active_kind_ == Kind::FIRMWARE) {
       success = valid_firmware_payload_(response_);
     }
 
     if (!success) {
       if (active_kind_ == Kind::POWER_STATE) {
-        // RR:1B ist bei aelteren Modellen evtl. nicht vorhanden. Nicht alle
-        // 2 s einen Warnhinweis spammen; der Rohzustand zeigt es an.
-        state_known_ = false;
+        // HZ ist auf der Z2 auch bei ausgeschalteter Maschine lesbar.
+        // Nicht alle 2 s einen Warnhinweis spammen; der Rohzustand zeigt es an.
         if (state_raw_ != nullptr) state_raw_->publish_state("keine Antwort");
-        ESP_LOGD(TAG, "RR:1B keine Antwort (%s)", reason);
+        ESP_LOGD(TAG, "HZ keine Antwort (%s)", reason);
       } else {
         ESP_LOGW(TAG, "RX Fehler bei %s: %s (Antwort '%s', %u Bytes)",
                  active_command_.c_str(),
@@ -317,32 +330,7 @@ class JuraZ2 : public uart::UARTDevice {
   }
 
   void publish_status_() {
-    std::string st;
-
-    if (state_known_) {
-      switch (machine_state_) {
-        case 0x0000: st = "Aus"; break;
-        case 0x1000: st = "Bereit"; break;
-        case 0x1001: st = "Spült"; break;
-        case 0x1002: st = "Reinigt"; break;
-        case 0x1008: st = "Brüht"; break;
-        default: {
-          char buf[24];
-          std::snprintf(buf, sizeof(buf), "Zustand 0x%04X", machine_state_);
-          st = buf;
-          break;
-        }
-      }
-      // Laufende Vorgaenge nicht durch Schale/Tank ueberschreiben.
-      if (machine_state_ == 0x0000 || machine_state_ == 0x1001 ||
-          machine_state_ == 0x1002 || machine_state_ == 0x1008) {
-        publish_text_(status_, st);
-        return;
-      }
-    } else {
-      st = powered_ ? "Bereit" : "Aus";
-    }
-
+    std::string st = powered_ ? "Bereit" : "Aus";
     if (tray_missing_) {
       st = "Auffangschale fehlt oder voll";
     } else if (tank_missing_) {
@@ -355,33 +343,32 @@ class JuraZ2 : public uart::UARTDevice {
 
   void handle_power_state_() {
     const std::string raw = response_.substr(3);
-    if (state_raw_ != nullptr) state_raw_->publish_state(raw);
-    const unsigned long value =
-        std::strtoul(raw.substr(0, 4).c_str(), nullptr, 16);
-    const uint16_t state = static_cast<uint16_t>(value & 0xFFFFu);
+    const size_t comma = raw.find(',');
+    const std::string field = comma == std::string::npos ? raw : raw.substr(0, comma);
+    if (state_raw_ != nullptr) state_raw_->publish_state(field);
+    const unsigned long value = std::strtoul(field.c_str(), nullptr, 2);
+    const uint16_t state = static_cast<uint16_t>(value & 0x0FFFu);
+
+    // HZ-Bit 6 ist auf der Z2 im Standby/Aus gesetzt, im Betrieb nicht.
+    const bool on = (state & 0x0040u) == 0;
 
     if (power_command_active_) {
       const uint32_t age = millis() - power_command_ms_;
-      // Nach AN:01 kann RR:1B noch kurz 0000 liefern, bis die Maschine wach ist.
-      if (power_command_target_ && state == 0x0000 && age < 15000) {
-        ESP_LOGD(TAG, "RR:1B noch 0000 nach Power-ON (%.1f s)",
-                 age / 1000.0f);
+      // Nach AN:01 kann HZ noch kurz "aus" liefern, bis die Maschine wach ist.
+      if (power_command_target_ && !on && age < 20000) {
+        ESP_LOGD(TAG, "HZ noch aus nach Power-ON (%.1f s)", age / 1000.0f);
         return;
       }
-      // Nach AN:02 kann RR:1B noch kurz einen An-Zustand liefern.
-      if (!power_command_target_ && state != 0x0000 && age < 5000) {
-        ESP_LOGD(TAG, "RR:1B noch 0x%04X nach Power-OFF (%.1f s)", state,
-                 age / 1000.0f);
+      // Nach AN:02 kann HZ noch kurz "an" liefern, bis die Maschine aus ist.
+      if (!power_command_target_ && on && age < 30000) {
+        ESP_LOGD(TAG, "HZ noch an nach Power-OFF (%.1f s)", age / 1000.0f);
         return;
       }
       power_command_active_ = false;
     }
 
     machine_state_ = state;
-    state_known_ = true;
-    const bool on = machine_state_ != 0x0000;
-    ESP_LOGI(TAG, "RR:1B Zustand 0x%04X (%s)", machine_state_,
-             on ? "an" : "aus");
+    ESP_LOGI(TAG, "HZ Zustand 0x%03X (%s)", machine_state_, on ? "an" : "aus");
     this->apply_power_state_(on);
   }
 
@@ -461,7 +448,6 @@ class JuraZ2 : public uart::UARTDevice {
   uint8_t rx_shift_{0};
   bool response_complete_{false};
   bool powered_{false};
-  bool state_known_{false};
   bool power_command_active_{false};
   bool power_command_target_{false};
   uint32_t power_command_ms_{0};
